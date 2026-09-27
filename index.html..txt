@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bé Học Tiếng Anh - Vui Cùng Thức Ăn</title>
+  
+  <!-- Google Fonts: Nunito rounded font for kids -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Canvas Confetti for celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background: radial-gradient(circle at top left, #FFF7ED 0%, #FEF3C7 50%, #E0F2FE 100%);
+    }
+
+    /* 3D Flip Card Container */
+    .perspective-1000 {
+      perspective: 1200px;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .flip-card-front, .flip-card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 2rem;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.1), 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .flip-card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Bouncy animations */
+    @keyframes floatSoft {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    .animate-float {
+      animation: floatSoft 3s ease-in-out infinite;
+    }
+
+    .bounce-tap:active {
+      transform: scale(0.94);
+    }
+
+    /* Custom subtle scroll prevention for swipe smoothness */
+    .touch-pan-y {
+      touch-action: pan-y;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col items-center justify-between p-4 sm:p-6 overflow-x-hidden touch-pan-y">
+
+  <!-- Header Bar -->
+  <header class="w-full max-w-md flex items-center justify-between py-2">
+    <div class="flex items-center space-x-2">
+      <div class="w-11 h-11 bg-amber-400 rounded-2xl flex items-center justify-center shadow-md transform -rotate-3">
+        <span class="text-2xl">🍔</span>
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-black text-amber-900 tracking-tight leading-none">Flashcard Bé Yêu</h1>
+        <p class="text-xs font-bold text-amber-700/80">Từ vựng Món Ăn Thơm Ngon</p>
+      </div>
+    </div>
+    
+    <!-- Reset progress button -->
+    <button id="reset-btn" title="Học lại từ đầu" class="p-2.5 rounded-2xl bg-white/80 hover:bg-white text-slate-500 hover:text-rose-500 shadow-sm border border-slate-200 transition-all bounce-tap flex items-center space-x-1">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Progress Section -->
+  <section class="w-full max-w-md my-3 bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-sm border border-amber-100">
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-xs font-extrabold text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        Tiến độ học tập
+      </span>
+      <span id="progress-text" class="text-sm font-black text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+        Đã thuộc 0/3 từ
+      </span>
+    </div>
+    <div class="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden p-0.5 border border-slate-200/70">
+      <div id="progress-bar-fill" class="bg-gradient-to-r from-amber-400 via-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+    </div>
+  </section>
+
+  <!-- Flashcard Display Section -->
+  <main class="w-full max-w-md flex-1 flex flex-col items-center justify-center my-2">
+    <!-- Card Outer Wrapper -->
+    <div class="w-full h-84 sm:h-96 perspective-1000 cursor-pointer select-none" id="card-wrapper" role="button" aria-label="Nhấn để lật thẻ">
+      <div id="card-inner" class="flip-card-inner">
+        
+        <!-- CARD FRONT (ENGLISH) -->
+        <div class="flip-card-front bg-white border-4 border-amber-200/80 p-5 sm:p-6 overflow-hidden">
+          <!-- Top indicators -->
+          <div class="flex justify-between items-center w-full">
+            <span id="card-counter" class="text-xs font-black px-3 py-1 bg-amber-100 text-amber-800 rounded-full">
+              Thẻ 1 / 3
+            </span>
+            <div id="status-badge" class="hidden text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Central Illustration -->
+          <div id="front-svg-container" class="my-auto flex items-center justify-center h-44 w-44 mx-auto animate-float">
+            <!-- Dynamic SVG inserted by JS -->
+          </div>
+
+          <!-- Bottom: Word & Audio button -->
+          <div class="w-full flex items-center justify-between pt-2 border-t border-slate-100">
+            <div class="text-left">
+              <h2 id="card-word" class="text-2xl sm:text-3xl font-black text-slate-800 tracking-wide">Pizza</h2>
+              <p id="card-phonetic" class="text-sm sm:text-base font-bold text-amber-600 font-mono">/ˈpiːtsə/</p>
+            </div>
+            
+            <!-- Speak Button -->
+            <button id="front-speak-btn" class="speak-btn w-13 h-13 p-3 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-amber-950 rounded-2xl shadow-md transition-all bounce-tap flex items-center justify-center" aria-label="Nghe phát âm">
+              <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.5A2.25 2.25 0 002.25 9.75v4.5a2.25 2.25 0 002.25 2.25h1.94l4.5 4.5c.944.945 2.56.276 2.56-1.06V4.06zM18.54 5.46a.75.75 0 011.06 0 10.97 10.97 0 010 13.08.75.75 0 11-1.06-1.06 9.47 9.47 0 000-10.96.75.75 0 010-1.06zM15.89 8.11a.75.75 0 011.06 0 6.72 6.72 0 010 7.78.75.75 0 11-1.06-1.06 5.22 5.22 0 000-5.66.75.75 0 010-1.06z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Tap hint overlay at footer -->
+          <div class="mt-2 text-center">
+            <span class="text-[11px] font-bold text-slate-400 flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+              </svg>
+              Chạm vào thẻ để xem nghĩa tiếng Việt
+            </span>
+          </div>
+        </div>
+
+        <!-- CARD BACK (VIETNAMESE & EXAMPLE) -->
+        <div class="flip-card-back bg-gradient-to-br from-amber-500 via-orange-500 to-rose-500 text-white p-6 border-4 border-amber-300 overflow-hidden">
+          <!-- Top indicators -->
+          <div class="flex justify-between items-center w-full">
+            <span class="text-xs font-black px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white">
+              Nghĩa & Ví dụ
+            </span>
+            <span class="text-xs font-bold text-amber-100 flex items-center gap-1">
+              Chạm để quay lại ↺
+            </span>
+          </div>
+
+          <!-- Vietnamese Meaning -->
+          <div class="my-auto space-y-4">
+            <div>
+              <span class="text-xs uppercase tracking-widest text-amber-200 font-black">Nghĩa tiếng Việt</span>
+              <h3 id="card-meaning" class="text-3xl sm:text-4xl font-black text-white mt-1 drop-shadow-sm">Bánh pizza</h3>
+            </div>
+
+            <!-- Example sentence box -->
+            <div class="bg-white/15 backdrop-blur-md rounded-2xl p-4 border border-white/25 flex items-center justify-between">
+              <div class="text-left pr-2">
+                <span class="text-[10px] font-bold uppercase text-amber-200 block">Ví dụ câu</span>
+                <p id="card-example" class="text-lg sm:text-xl font-black text-white leading-snug">"I like pizza."</p>
+              </div>
+              <button id="back-speak-btn" class="speak-btn shrink-0 w-11 h-11 bg-white text-orange-600 hover:bg-amber-100 rounded-xl shadow-md transition-all bounce-tap flex items-center justify-center" aria-label="Đọc câu ví dụ">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M13.5 4.06c0-1.336-1.616-2.005-2.56-1.06l-4.5 4.5H4.5A2.25 2.25 0 002.25 9.75v4.5a2.25 2.25 0 002.25 2.25h1.94l4.5 4.5c.944.945 2.56.276 2.56-1.06V4.06zM18.54 5.46a.75.75 0 011.06 0 10.97 10.97 0 010 13.08.75.75 0 11-1.06-1.06 9.47 9.47 0 000-10.96.75.75 0 010-1.06zM15.89 8.11a.75.75 0 011.06 0 6.72 6.72 0 010 7.78.75.75 0 11-1.06-1.06 5.22 5.22 0 000-5.66.75.75 0 010-1.06z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="text-center text-xs text-amber-100/90 font-medium">
+            Luyện đọc to theo cô giáo nhé!
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Navigation Controls (Prev / Next) -->
+  <section class="w-full max-w-md flex items-center justify-between px-2 my-2">
+    <button id="prev-btn" class="flex items-center gap-1 px-4 py-2.5 bg-white/90 hover:bg-white text-slate-700 font-extrabold rounded-2xl shadow-sm border border-slate-200 transition-all bounce-tap">
+      <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
+      </svg>
+      <span>Trước</span>
+    </button>
+
+    <!-- Indicators dots -->
+    <div id="dots-container" class="flex space-x-2">
+      <!-- Dots inserted dynamically -->
+    </div>
+
+    <button id="next-btn" class="flex items-center gap-1 px-4 py-2.5 bg-white/90 hover:bg-white text-slate-700 font-extrabold rounded-2xl shadow-sm border border-slate-200 transition-all bounce-tap">
+      <span>Sau</span>
+      <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"/>
+      </svg>
+    </button>
+  </section>
+
+  <!-- Mastery Action Buttons -->
+  <footer class="w-full max-w-md grid grid-cols-2 gap-3 pt-2">
+    <button id="mark-review-btn" class="flex items-center justify-center gap-2 py-3.5 px-4 bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300 font-black rounded-2xl shadow-sm transition-all bounce-tap">
+      <span class="text-xl">🤔</span>
+      <span>Cần ôn lại</span>
+    </button>
+
+    <button id="mark-mastered-btn" class="flex items-center justify-center gap-2 py-3.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-md shadow-emerald-200 transition-all bounce-tap">
+      <span class="text-xl">⭐</span>
+      <span>Đã nhớ!</span>
+    </button>
+  </footer>
+
+  <!-- Modal for Celebrating 100% Completion -->
+  <div id="celebration-toast" class="fixed top-5 transform -translate-y-20 opacity-0 pointer-events-none transition-all duration-500 bg-white border-2 border-emerald-400 text-emerald-900 px-5 py-3 rounded-2xl shadow-xl flex items-center space-x-3 z-50">
+    <span class="text-3xl">🎉</span>
+    <div>
+      <h4 class="font-black text-sm">Tuyệt vời lắm bé ơi!</h4>
+      <p class="text-xs font-semibold text-slate-600">Bé đã thuộc hết cả 3 từ vựng rồi!</p>
+    </div>
+  </div>
+
+  <script>
+    /* Flashcards Dataset with Handcrafted Colorful SVGs */
+    const flashcardsData = [
+      {
+        id: 'pizza',
+        word: 'Pizza',
+        phonetic: '/ˈpiːtsə/',
+        meaning: 'Bánh pizza',
+        example: 'I like pizza.',
+        // Bright cheese pizza slice with pepperoni and basil
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full filter drop-shadow-lg">
+            <defs>
+              <linearGradient id="crustGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#E28743" />
+                <stop offset="100%" stop-color="#C25E1B" />
+              </linearGradient>
+              <linearGradient id="cheeseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FED766" />
+                <stop offset="60%" stop-color="#F4B41A" />
+                <stop offset="100%" stop-color="#EAA100" />
+              </linearGradient>
+            </defs>
+            <!-- Pizza Crust Arc -->
+            <path d="M 30,55 Q 100,20 170,55 Q 175,70 162,75 Q 100,45 38,75 Z" fill="url(#crustGrad)" stroke="#A04000" stroke-width="2.5" />
+            <!-- Pizza Slice Body -->
+            <path d="M 38,70 Q 100,45 162,70 L 105,180 Q 100,186 95,180 Z" fill="url(#cheeseGrad)" stroke="#E67E22" stroke-width="2" />
+            <!-- Dripping Cheese detail -->
+            <path d="M 75,130 Q 82,145 78,155 Q 73,142 68,138" fill="#F4B41A" />
+            <path d="M 125,120 Q 130,135 124,145 Q 118,135 120,122" fill="#F4B41A" />
+            <!-- Pepperonis with shine -->
+            <circle cx="85" cy="85" r="16" fill="#D32F2F" stroke="#B71C1C" stroke-width="2"/>
+            <circle cx="81" cy="81" r="3" fill="#FF8A80" opacity="0.8"/>
+            
+            <circle cx="125" cy="95" r="15" fill="#D32F2F" stroke="#B71C1C" stroke-width="2"/>
+            <circle cx="121" cy="91" r="3" fill="#FF8A80" opacity="0.8"/>
+            
+            <circle cx="100" cy="140" r="14" fill="#D32F2F" stroke="#B71C1C" stroke-width="2"/>
+            <circle cx="96" cy="136" r="2.5" fill="#FF8A80" opacity="0.8"/>
+
+            <!-- Basil herbs -->
+            <ellipse cx="65" cy="108" rx="7" ry="4" transform="rotate(-25 65 108)" fill="#2E7D32"/>
+            <ellipse cx="140" cy="135" rx="7" ry="4" transform="rotate(35 140 135)" fill="#2E7D32"/>
+            <ellipse cx="105" cy="105" rx="6" ry="3" transform="rotate(50 105 105)" fill="#43A047"/>
+          </svg>
+        `
+      },
+      {
+        id: 'hamburger',
+        word: 'Hamburger',
+        phonetic: '/ˈhæmbɜːrɡər/',
+        meaning: 'Bánh mì kẹp thịt',
+        example: 'A yummy hamburger.',
+        // Delicious burger with sesame seeds, cheese, beef patty, lettuce
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full filter drop-shadow-lg">
+            <defs>
+              <linearGradient id="bunGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FCD34D" />
+                <stop offset="50%" stop-color="#F59E0B" />
+                <stop offset="100%" stop-color="#D97706" />
+              </linearGradient>
+            </defs>
+            <!-- Top Bun -->
+            <path d="M 35,90 C 35,40 165,40 165,90 C 165,98 35,98 35,90 Z" fill="url(#bunGrad)" stroke="#B45309" stroke-width="2.5" />
+            
+            <!-- Sesame seeds -->
+            <ellipse cx="70" cy="58" rx="3.5" ry="2" fill="#FEF3C7" transform="rotate(20 70 58)"/>
+            <ellipse cx="100" cy="50" rx="3.5" ry="2" fill="#FEF3C7" transform="rotate(-10 100 50)"/>
+            <ellipse cx="130" cy="58" rx="3.5" ry="2" fill="#FEF3C7" transform="rotate(-25 130 58)"/>
+            <ellipse cx="85" cy="72" rx="3.5" ry="2" fill="#FEF3C7" transform="rotate(5 85 72)"/>
+            <ellipse cx="115" cy="70" rx="3.5" ry="2" fill="#FEF3C7" transform="rotate(15 115 70)"/>
+
+            <!-- Lettuce (wavy green line) -->
+            <path d="M 28,95 Q 40,88 55,95 Q 70,102 85,95 Q 100,88 115,95 Q 130,102 145,95 Q 160,88 172,95 L 168,103 Q 155,97 142,103 Q 128,109 114,103 Q 100,97 86,103 Q 72,109 58,103 Q 44,97 32,103 Z" fill="#22C55E" stroke="#15803D" stroke-width="1.5"/>
+
+            <!-- Melted Cheese (pointy corners) -->
+            <polygon points="36,105 164,105 150,126 125,116 98,128 72,115 50,126" fill="#FBBF24" stroke="#D97706" stroke-width="1.5" />
+
+            <!-- Beef Patty -->
+            <rect x="32" y="112" width="136" height="24" rx="12" fill="#78350F" stroke="#451A03" stroke-width="2" />
+            <circle cx="60" cy="124" r="2" fill="#92400E" opacity="0.6"/>
+            <circle cx="100" cy="120" r="2" fill="#92400E" opacity="0.6"/>
+            <circle cx="140" cy="125" r="2" fill="#92400E" opacity="0.6"/>
+
+            <!-- Bottom Bun -->
+            <path d="M 38,138 C 38,138 38,162 100,162 C 162,162 162,138 162,138 Z" fill="url(#bunGrad)" stroke="#B45309" stroke-width="2.5" />
+          </svg>
+        `
+      },
+      {
+        id: 'sandwich',
+        word: 'Sandwich',
+        phonetic: '/ˈsænwɪtʃ/',
+        meaning: 'Bánh mì kẹp',
+        example: 'She eats a sandwich.',
+        // Triangular club sandwich with layers of egg, ham, cucumber, cheese
+        svg: `
+          <svg viewBox="0 0 200 200" class="w-full h-full filter drop-shadow-lg">
+            <defs>
+              <linearGradient id="breadSlice" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FDE68A" />
+                <stop offset="100%" stop-color="#F59E0B" />
+              </linearGradient>
+            </defs>
+            <!-- Crust Base / Shadow -->
+            <polygon points="40,150 160,150 160,50" fill="#92400E" rx="8" />
+
+            <!-- Bottom Bread Slice -->
+            <polygon points="36,146 156,146 156,46" fill="url(#breadSlice)" stroke="#B45309" stroke-width="3" />
+
+            <!-- Layer 1: Tomato / Ham slice -->
+            <polygon points="44,142 152,142 152,58" fill="#EF4444" />
+            
+            <!-- Layer 2: Cheese slice drooping -->
+            <polygon points="48,138 152,138 152,68" fill="#FBBF24" />
+            <polygon points="80,138 100,152 115,138" fill="#FBBF24" />
+
+            <!-- Layer 3: Cucumber / Greens -->
+            <polygon points="56,134 150,134 150,80" fill="#10B981" />
+            <circle cx="105" cy="120" r="10" fill="#A7F3D0" stroke="#059669" stroke-width="2"/>
+            <circle cx="130" cy="105" r="10" fill="#A7F3D0" stroke="#059669" stroke-width="2"/>
+
+            <!-- Top Bread Slice (Tilted 3D effect) -->
+            <polygon points="30,138 148,138 148,36" fill="url(#breadSlice)" stroke="#B45309" stroke-width="3" />
+            
+            <!-- Toast marks -->
+            <path d="M 65,115 Q 85,95 105,75" stroke="#D97706" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+            <path d="M 90,122 Q 110,102 130,82" stroke="#D97706" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+
+            <!-- Decorative toothpick olive -->
+            <line x1="105" y1="50" x2="105" y2="85" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="105" cy="50" r="9" fill="#65A30D" stroke="#365314" stroke-width="2"/>
+            <circle cx="105" cy="50" r="3" fill="#DC2626" />
+          </svg>
+        `
+      }
+    ];
+
+    const STORAGE_KEY = 'kid_flashcards_progress_v1';
+
+    let currentIndex = 0;
+    let isFlipped = false;
+    let masteredMap = {}; // { 'pizza': true, 'hamburger': false, ... }
+
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          masteredMap = JSON.parse(saved);
+        } else {
+          masteredMap = {};
+        }
+      } catch (err) {
+        masteredMap = {};
+      }
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(masteredMap));
+      } catch (err) {
+        console.error('Không thể lưu vào localStorage', err);
+      }
+    }
+
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // Card Flip whoosh
+      playFlip() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(180, this.ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.15);
+        } catch (e) {}
+      }
+
+      // Cheerful success chime for 'Mastered'
+      playSuccess() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now + i * 0.08);
+            gain.gain.setValueAtTime(0.18, now + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.35);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.08);
+            osc.stop(now + i * 0.08 + 0.35);
+          });
+        } catch (e) {}
+      }
+
+      // Warm review tone for 'Need review'
+      playReview() {
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [440, 392].forEach((freq, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + i * 0.1);
+            gain.gain.setValueAtTime(0.15, now + i * 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.25);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.1);
+            osc.stop(now + i * 0.1 + 0.25);
+          });
+        } catch (e) {}
+      }
+    }
+
+    const sound = new SoundFX();
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) {
+        return;
+      }
+      
+      // Stop ongoing voice
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      // High pitch and relaxed rate makes voice very clear and engaging for kids
+      utterance.rate = 0.85;
+      utterance.pitch = 1.15;
+
+      // Select natural female English voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Google US English') || v.name.includes('Natural') || v.name.includes('Jenny')));
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Preload voices
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    const cardWrapper = document.getElementById('card-wrapper');
+    const cardInner = document.getElementById('card-inner');
+    const frontSvgContainer = document.getElementById('front-svg-container');
+    const cardWord = document.getElementById('card-word');
+    const cardPhonetic = document.getElementById('card-phonetic');
+    const cardMeaning = document.getElementById('card-meaning');
+    const cardExample = document.getElementById('card-example');
+    const cardCounter = document.getElementById('card-counter');
+    const statusBadge = document.getElementById('status-badge');
+    const dotsContainer = document.getElementById('dots-container');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const progressText = document.getElementById('progress-text');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const markMasteredBtn = document.getElementById('mark-mastered-btn');
+    const markReviewBtn = document.getElementById('mark-review-btn');
+    const frontSpeakBtn = document.getElementById('front-speak-btn');
+    const backSpeakBtn = document.getElementById('back-speak-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const celebrationToast = document.getElementById('celebration-toast');
+
+    function updateCardUI() {
+      const card = flashcardsData[currentIndex];
+      
+      // Reset flip state to front when switching cards
+      if (isFlipped) {
+        isFlipped = false;
+        cardInner.classList.remove('is-flipped');
+      }
+
+      // Populate card texts
+      cardWord.textContent = card.word;
+      cardPhonetic.textContent = card.phonetic;
+      cardMeaning.textContent = card.meaning;
+      cardExample.textContent = `"${card.example}"`;
+      frontSvgContainer.innerHTML = card.svg;
+      cardCounter.textContent = `Thẻ ${currentIndex + 1} / ${flashcardsData.length}`;
+
+      // Status indicator on current card
+      const isMastered = masteredMap[card.id] === true;
+      const isReview = masteredMap[card.id] === false;
+
+      if (isMastered) {
+        statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-300";
+        statusBadge.innerHTML = "<span>✓</span> Đã nhớ";
+        statusBadge.classList.remove('hidden');
+      } else if (isReview) {
+        statusBadge.className = "text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 bg-amber-100 text-amber-700 border border-amber-300";
+        statusBadge.innerHTML = "<span>↺</span> Cần ôn";
+        statusBadge.classList.remove('hidden');
+      } else {
+        statusBadge.classList.add('hidden');
+      }
+
+      // Update Dots Indicator
+      dotsContainer.innerHTML = '';
+      flashcardsData.forEach((item, idx) => {
+        const dot = document.createElement('div');
+        dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${
+          idx === currentIndex 
+            ? 'w-8 bg-amber-500 shadow-sm' 
+            : masteredMap[item.id] === true 
+              ? 'bg-emerald-400' 
+              : 'bg-slate-200'
+        }`;
+        dotsContainer.appendChild(dot);
+      });
+
+      // Update Progress Count
+      const masteredCount = flashcardsData.filter(c => masteredMap[c.id] === true).length;
+      const percent = Math.round((masteredCount / flashcardsData.length) * 100);
+      progressText.textContent = `Đã thuộc ${masteredCount}/${flashcardsData.length} từ`;
+      progressBarFill.style.width = `${percent}%`;
+
+      // Update Prev / Next buttons state
+      prevBtn.disabled = (currentIndex === 0);
+      prevBtn.style.opacity = currentIndex === 0 ? "0.45" : "1";
+      nextBtn.disabled = (currentIndex === flashcardsData.length - 1);
+      nextBtn.style.opacity = currentIndex === flashcardsData.length - 1 ? "0.45" : "1";
+    }
+
+    function toggleFlip() {
+      sound.playFlip();
+      isFlipped = !isFlipped;
+      if (isFlipped) {
+        cardInner.classList.add('is-flipped');
+      } else {
+        cardInner.classList.remove('is-flipped');
+      }
+    }
+
+    function checkFullMastery() {
+      const masteredCount = flashcardsData.filter(c => masteredMap[c.id] === true).length;
+      if (masteredCount === flashcardsData.length) {
+        // Trigger celebratory confetti
+        if (typeof confetti === 'function') {
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+          setTimeout(() => {
+            confetti({
+              particleCount: 50,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            });
+            confetti({
+              particleCount: 50,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            });
+          }, 250);
+        }
+
+        // Show banner toast
+        celebrationToast.classList.remove('opacity-0', '-translate-y-20', 'pointer-events-none');
+        celebrationToast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(() => {
+          celebrationToast.classList.add('opacity-0', '-translate-y-20', 'pointer-events-none');
+          celebrationToast.classList.remove('opacity-100', 'translate-y-0');
+        }, 3500);
+      }
+    }
+
+    function markStatus(isMastered) {
+      const currentCard = flashcardsData[currentIndex];
+      masteredMap[currentCard.id] = isMastered;
+      saveProgress();
+
+      if (isMastered) {
+        sound.playSuccess();
+      } else {
+        sound.playReview();
+      }
+
+      updateCardUI();
+
+      if (isMastered) {
+        checkFullMastery();
+        // Automatically advance to next card for delight experience if not at end
+        if (currentIndex < flashcardsData.length - 1) {
+          setTimeout(() => {
+            currentIndex++;
+            updateCardUI();
+          }, 350);
+        }
+      }
+    }
+
+    /* Event Listeners */
+    // Card Flip
+    cardWrapper.addEventListener('click', (e) => {
+      // Don't flip if user clicked speech button
+      if (e.target.closest('.speak-btn')) return;
+      toggleFlip();
+    });
+
+    // Pronunciation Buttons
+    frontSpeakBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.init();
+      speakText(flashcardsData[currentIndex].word);
+    });
+
+    backSpeakBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.init();
+      speakText(flashcardsData[currentIndex].example);
+    });
+
+    // Previous & Next Controls
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        updateCardUI();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < flashcardsData.length - 1) {
+        currentIndex++;
+        updateCardUI();
+      }
+    });
+
+    // Mastery Buttons
+    markMasteredBtn.addEventListener('click', () => markStatus(true));
+    markReviewBtn.addEventListener('click', () => markStatus(false));
+
+    // Reset Progress
+    resetBtn.addEventListener('click', () => {
+      masteredMap = {};
+      saveProgress();
+      currentIndex = 0;
+      updateCardUI();
+    });
+
+    // Keyboard navigation (Arrow keys + Space to flip)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' && currentIndex < flashcardsData.length - 1) {
+        currentIndex++;
+        updateCardUI();
+      } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+        currentIndex--;
+        updateCardUI();
+      } else if (e.key === ' ' || e.key === 'Enter') {
+        toggleFlip();
+      }
+    });
+
+    /* Touch Swipe Gesture support */
+    let touchStartX = 0;
+    let touchEndX = 0;
+    cardWrapper.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    cardWrapper.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      handleSwipe();
+    }, { passive: true });
+
+    function handleSwipe() {
+      const threshold = 60;
+      if (touchEndX < touchStartX - threshold) {
+        // Swiped Left -> Next
+        if (currentIndex < flashcardsData.length - 1) {
+          currentIndex++;
+          updateCardUI();
+        }
+      } else if (touchEndX > touchStartX + threshold) {
+        // Swiped Right -> Prev
+        if (currentIndex > 0) {
+          currentIndex--;
+          updateCardUI();
+        }
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadProgress();
+      updateCardUI();
+    });
+  </script>
+</body>
+</html>
